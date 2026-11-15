@@ -4,7 +4,7 @@ The web implementation compares non-preemptive first-come, first-served (FCFS) s
 
 ## Input
 
-Each process has a unique positive integer ID, a non-negative integer arrival time, and a positive integer CPU burst. Identical arrival times are ordered by ID to keep results reproducible. Invalid values raise a descriptive \`RangeError\` in the scheduling library.
+Each process has a unique positive integer ID, a non-negative integer arrival time, and a positive integer CPU burst. Identical arrival times are ordered by ID to keep results reproducible. Invalid values raise a descriptive `RangeError` in the scheduling library.
 
 ## FCFS
 
@@ -12,7 +12,7 @@ Processes run to completion in arrival order. The CPU advances to the next arriv
 
 ## Round robin
 
-A ready process runs for up to \`timeQuantum\` units. Processes arriving during its time slice join the ready queue **before** the preempted process is placed back at the tail. A process's first run determines response time; subsequent runs do not reset it.
+A ready process runs for up to `timeQuantum` units. Processes arriving during its time slice join the ready queue **before** the preempted process is placed back at the tail. A process's first run determines response time; subsequent runs do not reset it.
 
 Example: P1 arrives at 0 with a burst of 5; P2 arrives at 1 with a burst of 2; quantum is 2.
 
@@ -37,9 +37,9 @@ The REST API's text parser and UI error messages still need separate validation 
 
 With Node.js 22 or newer:
 
-\`\`\`powershell
+```powershell
 cd cpu-scheduler
 npm test
-\`\`\`
+```
 
 GitHub Actions runs the same deterministic test suite on pull requests that touch scheduling code.

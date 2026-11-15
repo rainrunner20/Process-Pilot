@@ -1,0 +1,30 @@
+name: Scheduler tests
+
+on:
+  pull_request:
+    paths:
+      - "cpu-scheduler/lib/scheduler.ts"
+      - "cpu-scheduler/tests/**"
+      - "cpu-scheduler/package.json"
+      - ".github/workflows/scheduler-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "cpu-scheduler/lib/scheduler.ts"
+      - "cpu-scheduler/tests/**"
+      - "cpu-scheduler/package.json"
+      - ".github/workflows/scheduler-tests.yml"
+
+jobs:
+  scheduler:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cpu-scheduler
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run deterministic scheduling tests
+        run: npm test

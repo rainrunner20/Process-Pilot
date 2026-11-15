@@ -86,8 +86,8 @@ The repository also retains the original C++ implementation in
 `main.cpp`. To compile it independently:
 
 ```powershell
-g++ -std=c++17 main.cpp -o process-pilot
-./process-pilot
+g++ -std=c++17 main.cpp -o process-pilot.exe
+.\process-pilot.exe
 ```
 
 The TypeScript library has its own documented assumptions and tests;

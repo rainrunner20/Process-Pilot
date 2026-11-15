@@ -1,116 +1,106 @@
-# CPU Scheduling Algorithms Comparison Simulator
-![alt text](image-2.png)
-## Overview
-This project contains a CPU scheduling simulation project implemented in C++. The project aims to compare the performance of two CPU scheduling algorithms: First Come First Serve (FCFS) and Round Robin (RR). The simulator executes a set of processes with CPU requirements and collects various statistics to evaluate the efficiency of each algorithm.
+# Process-Pilot
 
-## Features
+A deterministic CPU scheduling simulator that compares **First-Come, First-Served**
+(FCFS) and **Round Robin** (RR). It began as a C++ coursework project and
+also includes a modern Next.js/TypeScript application with an HTTP API.
 
-- **FCFS Algorithm**: Simulates the FCFS scheduling algorithm.
-- **Round Robin Algorithm**: Simulates the Round Robin scheduling algorithm with a specified time quantum.
-- **Performance Metrics**: Calculates and displays average turnaround time, waiting time, response time, and CPU efficiency.
-- **Input**: Processes are read from an input file (`input.txt`) with each line containing process ID, arrival time, and burst time.
-- **Output**: Provides detailed results for each process and overall performance metrics.
-  
-## Code Snippets
-Round Robin Scheduling Algorithm Implementation
-The Round Robin (RR) scheduling algorithm is implemented in the roundRobin function. This function is responsible for simulating the Round Robin scheduling policy, where each process is assigned a fixed time quantum for execution.
+The application shows per-process completion, turnaround, waiting and
+response times, and total CPU utilization. It models idle time but **does
+not simulate context-switch overhead**. This is a learning simulator, not
+an operating system scheduler.
 
-Here's how the roundRobin function was implemented:
-   ```cpp
-   void roundRobin(vector<Process>& processes, int quantum) {
-    queue<int> readyQueue; // Queue to store the indexes of ready processes
-    int currentTime = 0;   // Current time in the simulation
-    int remainingTime[processes.size()]; // Array to track remaining burst time for each process
+![Existing simulator screenshot](image-2.png)
 
-    // Initialize remainingTime array with burst times of each process
-    for (int i = 0; i < processes.size(); ++i) {
-        remainingTime[i] = processes[i].burstTime;
-    }
+## Run the web application (PowerShell)
 
-    int index = 0; // Index to iterate through processes
+Requires Node.js 22 or later.
 
-    while (true) {
-        bool done = true; // Flag to check if all processes are executed
+```powershell
+git clone https://github.com/rainrunner20/Process-Pilot.git
+cd Process-Pilot/cpu-scheduler
+npm ci
+npm test
+npm run dev
+```
 
-        // Traverse through each process
-        for (int i = 0; i < processes.size(); ++i) {
-            // If the process has remaining burst time
-            if (remainingTime[i] > 0) {
-                done = false; // There are still processes left to execute
+Open http://localhost:3000. The form has a valid sample workload, so
+**no AI provider key or database is required** to simulate a schedule.
+The optional AI input generator depends on a legacy external provider
+and is not needed for normal use.
 
-                // Execute the process for the quantum or its remaining time, whichever is smaller
-                int executeTime = min(quantum, remainingTime[i]);
-                currentTime += executeTime;
-                remainingTime[i] -= executeTime;
+### Input format
 
-                // Check if the process is completed
-                if (remainingTime[i] == 0) {
-                    processes[i].completionTime = currentTime; // Set completion time
-                }
+One process per line, with three integers:
 
-                // Add the index of the process to the ready queue
-                readyQueue.push(i);
-            }
-        }
+```text
+1 0 8
+2 1 3
+3 4 6
+4 6 2
+5 9 4
+```
 
-        // If all processes are executed, exit the loop
-        if (done) {
-            break;
-        }
+The fields are: **Process ID**, **arrival time**, **CPU burst length**.
+IDs must be unique positive integers; arrival times must be nonnegative;
+bursts must be between 1 and 10,000 units. Blank lines are allowed.
+For RR, enter a positive time quantum of at most 10,000 units.
 
-        // Move to the next process in the ready queue
-        index = (index + 1) % processes.size();
+Invalid input returns an HTTP 400 with a useful error message rather
+than crashing the server. Other limits cap process count and workload
+size. See [input validation contract](cpu-scheduler/docs/INPUT_VALIDATION.md).
 
-        // Skip idle time
-        if (remainingTime[index] == 0) {
-            continue;
-        }
+## How the scheduling works
 
-        // Execute the process at the front of the ready queue
-        while (!readyQueue.empty() && remainingTime[index] == 0) {
-            index = (index + 1) % processes.size();
-        }
-    }
-}
- ```
-<details>
-<summary>Explanation</summary>
+**FCFS:** Run processes in arrival order, with ties ordered by ID.
+The CPU is idle if no process has arrived.
 
-- The `roundRobin` function iterates through each process in a round-robin manner, executing them for a fixed time quantum.
-- It maintains a queue to keep track of processes ready for execution and updates the completion time for each process.
-- This implementation is crucial for evaluating the performance of the Round Robin scheduling algorithm within the CPU scheduling simulation project.
+**Round Robin:** Run a ready process for at most its quantum; processes
+that arrive during a time slice join the queue before the preempted
+process returns to its tail. This matters for correct waiting time and
+fairness metrics.
 
-</details>
+The same underlying scheduling library powers the API and tests.
+[Scheduling specification](cpu-scheduler/docs/SCHEDULING.md).
 
+## Measurements
 
+| Metric | Definition |
+| --- | --- |
+| Turnaround time | Completion time − arrival time |
+| Waiting time | Turnaround time − CPU burst |
+| Response time | First CPU start − arrival time |
+| CPU utilization | Busy CPU time ÷ elapsed simulation time |
 
+The UI keeps the old field name 'CPU Efficiency' for compatibility,
+but it represents utilization, not a measured gain in performance.
 
+## Engineering checks
 
+GitHub Actions runs Node.js regression tests on scheduler changes.
+The tests cover idle periods, Round Robin enqueue order, input
+immutability, invalid workloads and malformed API inputs.
 
-## Getting Started
+## Original C++ version
 
-1. **Clone the Repository**: Clone this repository to your local machine.
+The repository also retains the original C++ implementation in
+`main.cpp`. To compile it independently:
 
-   ```bash
-   git clone https://github.com/Hackerdude374/ProcessPilot.git
+```powershell
+g++ -std=c++17 main.cpp -o process-pilot.exe
+.\process-pilot.exe
+```
 
-2. **Navigate to Project Directory**: Move into the project directory.
+The TypeScript library has its own documented assumptions and tests;
+the older C++ implementation has not been shown to have identical
+semantics or test coverage.
 
-   ```bash
-   cd ProcessPilot
+## Known limitations
 
-3. **Compile the Code /Run the Simulator**: Compile the C++ code using a C++ compiler. For example, using g++:
+- No real operating-system integration or context-switch cost.
+- No measured performance claims from large-scale benchmarks.
+- The AI input generator is optional and its provider integration
+  has not been modernized or independently verified.
+- The Next.js UI still needs a confirmed hosted deployment and
+  wider browser-based end-to-end test coverage.
 
-   ```bash
-   g++ -o main main.cpp
-   ```
-   then run
-   ```bash
-   ./main
-   ```
-
-4. Pick your Scheduling Algorithm and Number of Processes.
-![alt text](image.png)
-
-5. Enjoy!
-
+This README describes what the code does today, not planned features.
